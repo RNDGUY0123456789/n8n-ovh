@@ -1,0 +1,321 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -160
+      ],
+      "id": "48a0011f-be9c-4b73-af06-96761c962b7d",
+      "name": "Manual trigger"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.baseDomain }}/1.0/auth/time",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        432,
+        -160
+      ],
+      "id": "ce65d15b-2307-463c-990a-99929a5b5b5f",
+      "name": "HTTP - Get time"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- SHA1 (not HMAC) ---\nfunction sha1(input) {\n  function rotl(n, s) { return (n << s) | (n >>> (32 - s)); }\n  function hex(v){ let s=''; for(let i=7;i>=0;i--) s+=((v >>> (i*4)) & 0xf).toString(16); return s; }\n  function utf8(str){\n    str=str.replace(/\\r\\n/g,'\\n');\n    let out=''; for (let i=0;i<str.length;i++){\n      const c=str.charCodeAt(i);\n      if (c<128) out+=String.fromCharCode(c);\n      else if (c<2048) out+=String.fromCharCode((c>>6)|192, (c&63)|128);\n      else out+=String.fromCharCode((c>>12)|224, ((c>>6)&63)|128, (c&63)|128);\n    } return out;\n  }\n  let i,j,A,B,C,D,E,temp,H0=0x67452301,H1=0xEFCDAB89,H2=0x98BADCFE,H3=0x10325476,H4=0xC3D2E1F0;\n  const W=new Array(80), m=utf8(input), ml=m.length, wa=[];\n  for(i=0;i<ml-3;i+=4){ j=(m.charCodeAt(i)<<24)|(m.charCodeAt(i+1)<<16)|(m.charCodeAt(i+2)<<8)|m.charCodeAt(i+3); wa.push(j); }\n  let last; switch(ml%4){case 0:last=0x080000000;break;case 1:last=(m.charCodeAt(ml-1)<<24)|0x0800000;break;case 2:last=(m.charCodeAt(ml-2)<<24)|(m.charCodeAt(ml-1)<<16)|0x08000;break;case 3:last=(m.charCodeAt(ml-3)<<24)|(m.charCodeAt(ml-2)<<16)|(m.charCodeAt(ml-1)<<8)|0x80;break;}\n  wa.push(last); while ((wa.length%16)!==14) wa.push(0); wa.push(ml>>>29); wa.push((ml<<3)&0x0ffffffff);\n  for(let bs=0; bs<wa.length; bs+=16){\n    for(i=0;i<16;i++) W[i]=wa[bs+i]; for(i=16;i<=79;i++) W[i]=rotl(W[i-3]^W[i-8]^W[i-14]^W[i-16],1);\n    A=H0; B=H1; C=H2; D=H3; E=H4;\n    for(i=0;i<=19;i++){ temp=(rotl(A,5)+((B&C)|(~B&D))+E+W[i]+0x5A827999)&0x0ffffffff; E=D; D=C; C=rotl(B,30); B=A; A=temp; }\n    for(i=20;i<=39;i++){ temp=(rotl(A,5)+(B^C^D)+E+W[i]+0x6ED9EBA1)&0x0ffffffff; E=D; D=C; C=rotl(B,30); B=A; A=temp; }\n    for(i=40;i<=59;i++){ temp=(rotl(A,5)+((B&C)|(B&D)|(C&D))+E+W[i]+0x8F1BBCDC)&0x0ffffffff; E=D; D=C; C=rotl(B,30); B=A; A=temp; }\n    for(i=60;i<=79;i++){ temp=(rotl(A,5)+(B^C^D)+E+W[i]+0xCA62C1D6)&0x0ffffffff; E=D; D=C; C=rotl(B,30); B=A; A=temp; }\n    H0=(H0+A)&0x0ffffffff; H1=(H1+B)&0x0ffffffff; H2=(H2+C)&0x0ffffffff; H3=(H3+D)&0x0ffffffff; H4=(H4+E)&0x0ffffffff;\n  }\n  return (hex(H0)+hex(H1)+hex(H2)+hex(H3)+hex(H4)).toLowerCase();\n}\n\n// -- SIGNATURE OVHcloud --\nconst j = $json;\nconst method = j.method;\nconst url = j.url;\nlet body = j.body;\nif (method !== 'GET' && j.body) {\n    body = typeof j.body === 'string' ? j.body : JSON.stringify(j.body);\n}\nconst timestamp = j.timestamp;\n\n// AppSecret + ConsumerKey + Method + URL + Body + Timestamp\nconst toSign = [ j.applicationSecret, j.consumerKey, method, url, body, timestamp ].join('+');\nconst signature = `$1$${sha1(toSign)}`;\n\nreturn { json: { ...j, method, url, body, timestamp, signature } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        -160
+      ],
+      "id": "bcfb6ffb-b479-4afc-8e84-5a4b21390e08",
+      "name": "Code - Calculating signature"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "7Hq1MLBBgNLjBF7e",
+          "mode": "list",
+          "cachedResultName": "OVH",
+          "cachedResultUrl": "/projects/LMOpWTcapso4ibRf/datatables/7Hq1MLBBgNLjBF7e"
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        656,
+        -256
+      ],
+      "id": "0fed7808-af1f-4d7e-a94e-b0a49d0ecb34",
+      "name": "Data table - OVH credentials"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4e284d8e-f6c6-4677-b512-6cbffb6c594e",
+              "name": "applicationKey",
+              "value": "={{ $json.applicationKey }}",
+              "type": "string"
+            },
+            {
+              "id": "45d38f3f-720e-415f-b95a-30a5492a56ae",
+              "name": "consumerKey",
+              "value": "={{ $json.consumerKey }}",
+              "type": "string"
+            },
+            {
+              "id": "d4cfb3d5-72b6-47ed-835d-e55bace8446b",
+              "name": "applicationSecret",
+              "value": "={{ $json.applicationSecret }}",
+              "type": "string"
+            },
+            {
+              "id": "4fee2b84-5f39-4bc2-82c8-4016c1d370d9",
+              "name": "timestamp",
+              "value": "={{ $json.timestamp }}",
+              "type": "string"
+            },
+            {
+              "id": "14397413-c0c9-4f54-b3b6-18a6ba2da337",
+              "name": "url",
+              "value": "={{ $('Set - Base domain').item.json.baseDomain }}/v1/me",
+              "type": "string"
+            },
+            {
+              "id": "b5f7501f-187e-42fb-9196-32f997450ae3",
+              "name": "method",
+              "value": "GET",
+              "type": "string"
+            },
+            {
+              "id": "0bb03429-6396-4e68-8e7b-2ffa12d41fef",
+              "name": "body",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1104,
+        -160
+      ],
+      "id": "d3c138e8-7b70-44fd-8ad7-457f97d410d0",
+      "name": "Set - Variables"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c5c49a6f-4fed-48a1-ae36-70f6ffef0a6c",
+              "name": "baseDomain",
+              "value": "https://eu.api.ovh.com",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        -160
+      ],
+      "id": "1eb77b72-0b2c-48f4-962a-0cc773100047",
+      "name": "Set - Base domain"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a87201de-650f-4193-853a-768db1f69124",
+              "name": "timestamp",
+              "value": "={{ $json }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        656,
+        -64
+      ],
+      "id": "7cca4a35-ee3b-40f7-97d9-8e55730e0612",
+      "name": "Set - Time variable"
+    },
+    {
+      "parameters": {
+        "method": "={{ $json.method }}",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json;charset=utf-8"
+            },
+            {
+              "name": "X-Ovh-Application",
+              "value": "={{ $json.applicationKey }}"
+            },
+            {
+              "name": "X-Ovh-Consumer",
+              "value": "={{ $json.consumerKey }}"
+            },
+            {
+              "name": "X-Ovh-Timestamp",
+              "value": "={{ $json.timestamp }}"
+            },
+            {
+              "name": "X-Ovh-Signature",
+              "value": "={{ $json.signature }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1552,
+        -160
+      ],
+      "id": "6a32870f-11f8-4431-b635-dc5d3552c6e4",
+      "name": "HTTP - Get informations"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        880,
+        -160
+      ],
+      "id": "dc02dd9d-dc39-4859-ac93-8ffc6ff2dd03",
+      "name": "Merge - Secrets and time"
+    }
+  ],
+  "connections": {
+    "Manual trigger": {
+      "main": [
+        [
+          {
+            "node": "Set - Base domain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Get time": {
+      "main": [
+        [
+          {
+            "node": "Data table - OVH credentials",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Set - Time variable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Calculating signature": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Get informations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data table - OVH credentials": {
+      "main": [
+        [
+          {
+            "node": "Merge - Secrets and time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Variables": {
+      "main": [
+        [
+          {
+            "node": "Code - Calculating signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Base domain": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Get time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Time variable": {
+      "main": [
+        [
+          {
+            "node": "Merge - Secrets and time",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge - Secrets and time": {
+      "main": [
+        [
+          {
+            "node": "Set - Variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "f9ce0108ebe23305546482e90166ee40887d5bcfbfee22d7b13b07d313664e6e"
+  }
+}
